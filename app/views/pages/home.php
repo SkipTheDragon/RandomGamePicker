@@ -9,7 +9,7 @@
 <div class="text">Advanced Random Picker</div>
 </a>
 
-<a href="" class="button" style="float:right;">
+<a href="/simple" class="button" style="float:right;">
 <div class="icon"><span class="lnr lnr-sync"></span></div>
 <div class="text">Simple Random Picker</div>
 </a>

@@ -1,218 +1,265 @@
 <?php
 class AdvancedController Extends Controller {
-    
-  
+
     private $model;
+
+    private $form;
     
+    private $step;
+
     public function index()
     {
-       
-        $this->model  = $this->model('advanced');
+        $this->model = $this->model('advanced');
+
+        if (isset($_GET['step'])) $this->step = $_GET['step'];
+        if (empty($this->step)) $this->step = 1;
+        if(isset($_GET['step']) && $_GET['step'] >= 4) header("location:/advanced");
+        if(isset($_POST['form'])) {
+            foreach($_POST['form'] as $form_key => $form_item){
+                $this->form[$form_key] = $this->sanitizeInputs($form_key,$form_item);
+            }
+        }
         $this->view('advanced', ['run' =>  $this->run(),
-            'genres' => $this->model->formOptions('genres'),
-            'features' => $this->model->formOptions('feature')
+            'genres' => $this->model->getFilterDetailsByType('genres'),
+            'features' => $this->model->getFilterDetailsByType('categories'),
+            'title' => $this->title()
         ]);
-        
     }
-    private function nextStep($actual_pos) 
+    private function title()
     {
-        $math = $actual_pos + 1;
-        
-        if($math < 5)
-        {
-            return header("location:/advanced/?step=$math");
+        if($this->step == 1) {
+            return 'Features';
+        } elseif($this->step == 2) {
+            return 'Categories';
+        } elseif($this->step == 3) {
+            return 'Genres';
+        }  else {
+            return 'To leave this page cuz itz bugged';
         }
     }
-    
     private function run()
     {
-        if(isset($_GET['step'])){ $step = $_GET['step']; }
-        if(empty($step)) { $step = 1; }
-        
-        if($step > 1 && empty($_SESSION['games']))
-        {
+       $this->sessionLeaksPrevention($this->step);
+        if(empty($_SESSION['games'])) {
             $_SESSION['games'] = $this->model->allGames();
         }
-        
-        if(isset($_POST['form']) && isset($_POST['submit']))
+        if(isset($this->form) && isset($_POST['submit']))
         {
-
-            if($step == 1 && (isset($_POST['form']['dlc']) || isset($_POST['form']['coming_soon']) || isset($_POST['form']['min_price']) || isset($_POST['form']['max_price'])))
+            if($this->step == 1)
             {
-                $_SESSION['games'] = $this->firstStep();
+                    $_SESSION['games'] = $this->firstStep();
             }
-            elseif($step == 2 && isset($_POST['form']['categories']))
+            elseif($this->step == 2 && isset($this->form['categories']))
             {
-                $_SESSION['games'] = $this->secondStep($_SESSION['games']);
+                    $_SESSION['games'] = $this->secondStep($_SESSION['games']);
             }
-            elseif($step == 3 && isset($_POST['form']['genres']))
+            elseif($this->step == 3 && isset($this->form['genres']))
             {
-                $_SESSION['games'] = $this->thirdStep($_SESSION['games']);
+                    $_SESSION['games'] = $this->thirdStep($_SESSION['games']);
             }
-            if($step <= 3)
-            {
-                $this->nextStep($step);
-            }
-  
-            $this->sessionUpdate($step);
+           $this->nextStep($this->step);
         }
-
-        if($step == 4)
-        {
-            if(empty($_SESSION['games']))
-            {
-                $_SESSION['games'] = $this->model->allGames();
-                
-            }
-            $game = $this->model->randomGame($_SESSION['games']);
-            header('location:/game/?id='.$_SESSION['games'][$game].'');
-            unset($_SESSION['games']);
-            $_SESSION['last_step'] = 1;
-        }
-        
-        $math = $step - 1;
-        $this->sessionDestroyer($math);
-        
-      /* echo "<pre>";
-        var_dump($_SESSION['last_step']);
-        var_dump($_POST['submit']);
-        echo "</pre>";
-        */ 
-    }
-    
-    private function sessionDestroyer($step)
-    {
-        if($step == 1 && !empty($_SESSION['games']))
-        {
-            unset($_SESSION['games']);
-        }
-        
-        if(!isset($_SESSION['last_step']))
-        {
-            $_SESSION['last_step'] = 1;
-        }
-        
-        if(isset($_SESSION['last_step']) && !empty($_SESSION['games']))
-        {
-            if($_SESSION['last_step'] != $step)
-            {
+        if($this->step == 4) {
+            if(empty($_SESSION['games'])) {
+                header("location:/simple?auto_start=1");
+            } else {
+                $game = $this->randomGame($_SESSION['games']);
+                header('location:/game/?id=' . $_SESSION['games'][$game] . '');
                 unset($_SESSION['games']);
-                header('location:/advanced/?step=1');
-                $_SESSION['last_step'] = 1;
             }
         }
+       // echo count($_SESSION['games']) . '<br/>';
+        return FALSE;
     }
-    
-    private function sessionUpdate($step) 
-    {
-        if($step == 1)
-        {
-            $_SESSION['last_step'] = 1;
-        }
-        elseif($step == 2)
-        {
-            $_SESSION['last_step'] = 2;
-        }
-        elseif($step = 3)
-        {
-            $_SESSION['last_step'] = 3;
-        }
-    }
-    
-    private function firstStep() 
+
+    private function firstStep()
     {
         $game_array = array();
-                     
-        if (!empty($_POST['form']['dlc']))
-        {
-            $game_choice = $this->model->setFilterRule('dlc','IS NOT NULL');
-                     
-            array_push($game_array,$game_choice);
+        if(!empty($this->form['dlc']))
+        $game_array[0] = $this->firstStepSimpleRules('dlc', 'IS NOT NULL');
+        if(!empty($this->form['coming_soon']))
+        $game_array[1] = $this->firstStepSimpleRules( 'coming_soon', '= 1');
+        if (!empty($this->form['min_price'] && $this->form['max_price'])) {
+            $price = $this->moneyTransform([$this->form['min_price'], $this->form['max_price']]);
+            $form_prices = "BETWEEN $price[0] AND $price[1]";
+            $game_array[2] = $this->firstStepSimpleRules((($this->form['min_price'] > 0) && ($this->form['max_price'] > $this->form['min_price'])), 'price', $form_prices);
         }
-        if (!empty($_POST['form']['coming_soon']))
-        {
-            $game_choice = $this->model->setFilterRule('coming_soon','!= 0');
-                        
-            array_push($game_array,$game_choice);
+        if(!empty($this->form['demo']))
+        $game_array[3] = $this->firstStepSimpleRules('demos', 'IS NOT NULL');
+
+        for ($i = 1; $i < 4; $i++) {
+                if(!empty($game_array[$i]) && empty($game_array[0])) {
+                    if($i > 0) {
+                        $math = $i - 1;
+                        array_push($game_array[$math], $game_array[$i]);
+                        unset($game_array[$i]);
+                    }
+                }
+             }
+             if(empty($game_array[1])) {
+                 unset($game_array[1]);
+             }
+        if(count($game_array) > 1) {
+            $game_list = call_user_func_array('array_intersect', $game_array);
+
+            return  $game_list;
         }
-        if (!empty($_POST['form']['min_price']) && !empty($_POST['form']['max_price']))
-        {
-            if(($_POST['form']['min_price'] > 0) && ($_POST['form']['max_price'] > 0))
-            {
-                $min_price = $_POST['form']['min_price'];
-                $max_price = $_POST['form']['max_price'];
-                $form_prices = "BETWEEN $min_price AND $max_price";
-                $game_choice = $this->model->setFilterRule('price',$form_prices);
-                                
-                array_push($game_array,$game_choice);
-            }
-        }
-                    
-        if(!isset($game_array[1])){ $game_array[1] = $game_array[0]; }
-        if(!isset($game_array[2])){ $game_array[2] = $game_array[0]; }
-                    
-        $game_array = array_intersect($game_array[0],$game_array[1],$game_array[2]);
-                   
-        return  $game_array;
+        return $game_array[0];
     }
-    
+
     private function secondStep($game_array)
     {
-        if(empty($game_array)) {$game_array = $this->model->allGames();}
-        
-        if (!empty($_POST['form']['categories']))
-        {
-            $chosen_filters = $_POST['form']['categories'];
-              
-            if(!is_array($chosen_filters))
-            {
-                $chosen_filters = $this->model->stringToArray($_POST['form']['categories']);
+        if (!empty($this->form['categories'])) {
+            $chosen_filters = $this->form['categories'];
+
+            if(!is_array($chosen_filters)) {
+                $chosen_filters = $this->stringToArray($this->form['categories']);
             }
-               
             $data_array = array();
-                
-            foreach ($game_array as $game_id) 
+            foreach ($game_array as $gameid)
             {
-                $filtrer = $this->model->filterArrays($game_id, $chosen_filters,'categories');
-                    
-            if(!is_null($filtrer))
-            {
-                array_push($data_array,$filtrer);
-            }
-        }
-        return $data_array;
-        }
-    }
-    
-    private function thirdStep($game_array)
-    {
-        if(empty($game_array)) {$game_array = $this->model->allGames();}
-        
-        if (!empty($_POST['form']['genres']))
-        {
-            $chosen_filters = $_POST['form']['genres'];
-            
-            if(!is_array($chosen_filters))
-            {
-                $chosen_filters = $this->model->stringToArray($_POST['form']['genres']);
-            }
-            
-            $data_array = array();
-            
-            foreach ($game_array as $game_id)
-            {
-                $filtrer = $this->model->filterArrays($game_id, $chosen_filters,'genres');
-                
-                if(!is_null($filtrer))
-                {
-                    array_push($data_array,$filtrer);
+                $filter = $this->model->filterArrays($gameid, $chosen_filters,'categories');
+                if(!is_null($filter)) {
+                    array_push($data_array,$filter);
                 }
             }
             return $data_array;
         }
+        return array();
     }
-    
 
+    private function thirdStep($game_array)
+    {
+        if (!empty($this->form['genres'])) {
+            $chosen_filters = $this->form['genres'];
 
-    
+            if(!is_array($chosen_filters)) {
+                $chosen_filters = $this->stringToArray($this->form['genres']);
+            }
+
+            $data_array = array();
+            foreach ($game_array as $game_id)
+            {
+                $filter = $this->model->filterArrays($game_id, $chosen_filters,'genres');
+
+                if(!is_null($filter)) {
+                    array_push($data_array,$filter);
+                }
+            }
+            return $data_array;
+        }
+        return array();
+    }
+
+    private function nextStep($actual_pos)
+    {
+        if($actual_pos <= 3) { // Goes To 4
+            $math = $actual_pos + 1;
+            return header("location:/advanced/?step=$math");
+        }
+        return FALSE;
+    }
+
+    private function randomGame($game_array)
+    {
+        return array_rand($game_array);
+    }
+
+    private function moneyTransform($prices)
+    {
+        $trans_prices = array();
+        foreach ($prices as $price) {
+            $transform = $price * 100;
+            array_push($trans_prices,$transform);
+        }
+
+        return $trans_prices;
+    }
+
+    private function firstStepSimpleRules($form_input_name, $select_rule)
+    {
+        $result = $this->model->setFilterRule($form_input_name,$select_rule);
+        $games = array();
+        array_push($games,$result);
+        return $games[0];
+    }
+
+    private function stringToArray($string)
+    {
+        $cleared_string = str_replace(['[',']'], '', $string);
+        $array = explode(',', $cleared_string);
+
+        return $array;
+    }
+
+     private function defaultFormInputs($form_key)
+     {
+         $default_keys = array('dlc','demo','score','coming_soon','min_price','max_price','categories','genres','submit');
+         if (in_array($form_key, $default_keys)) {
+             return TRUE;
+         } else {
+             throw new Exception("Not in array");
+         }
+         return FALSE;
+     }
+
+     private function sanitizeInputs($form_key,$form_item)
+     {
+             if($this->defaultFormInputs($form_key) == TRUE) {
+
+             if (is_int($form_item) || ctype_digit($form_item)) {
+                 $form_item = filter_var($form_item, FILTER_VALIDATE_INT);
+                return $form_item;
+             } elseif (is_array($form_item)) {
+                 foreach ($form_item as $key => $item){
+                     if(strlen($item) > 0) {
+                         if (ctype_digit($item)) {
+                             $form_item[$key] = filter_var($item, FILTER_VALIDATE_INT);
+                         } elseif (is_string($item)) {
+                             $form_item[$key] = filter_input(INPUT_POST, $item, FILTER_SANITIZE_STRING);
+                         } elseif (is_int($item)) {
+                             $form_item[$key] = filter_var($item, FILTER_VALIDATE_INT);
+                         }
+                     } else {
+                        unset($form_item[$key]);
+                     }
+                 }
+                 return $form_item;
+             }  elseif (is_string($form_item)) {
+                 $form_item = filter_input(INPUT_POST,$form_item,FILTER_SANITIZE_STRING);
+                 return $form_item;
+             }
+         }
+         return FALSE;
+     }
+
+    private function sessionLeaksPrevention($get)
+    {
+        if(!isset($_SESSION['id'])){
+            $_SESSION['id'] = 0;
+            return TRUE;
+
+        }
+        if($get == 1 && isset($_SESSION['games'])) {
+            unset($_SESSION['games']);
+            $_SESSION['id'] = 0;
+            return TRUE;
+
+        }
+        if($_SESSION['id'] == $get || $get < $_SESSION['id']) {
+            unset($_SESSION['games']);
+            header("location:/advanced/?step=1");
+            $_SESSION['id'] = 0;
+            return TRUE;
+        }
+
+        if(isset($this->form) && isset($_POST['submit'])) {
+            if($get == 1){$_SESSION['id'] = 1;}
+            if($get == 2){$_SESSION['id'] = 2;}
+            if($get == 3){$_SESSION['id'] = 3;}
+            if($get == 4){$_SESSION['id'] = 4;}
+            return TRUE;
+        }
+        return FALSE;
+    }
 }

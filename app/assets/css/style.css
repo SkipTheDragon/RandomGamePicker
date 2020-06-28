@@ -3,25 +3,18 @@ body,html
 	margin:0;
     font-family: 'Roboto', sans-serif;
 	color:white;
-	background: #080B12;
+	background: #0D1017;
 	width:100%;
 	height:100%;
 }
 
 .wrapper 
 {
-	margin: auto;
-	display:block;
-	min-width:400px;
-	min-height:400px;
-	width:600px;
-	height:400px;
-	padding-top:7%;
-	position:relative;
-}
-.wrapper700 
-{
-	width:700px;
+	position:absolute; /*it can be fixed too*/
+	left:0; right:0;
+	top:0; bottom:0;
+	margin:auto;
+	padding-top:0;
 }
 .button
 {
@@ -30,7 +23,6 @@ body,html
 	height:330px;
 	border: 3px solid #171A21;
 	margin:0 auto;
-	transition:all 0.05s linear;
 	background:#0D1017;
 	border-bottom-left-radius:15px;
 	border-bottom-right-radius:15px;
@@ -39,18 +31,39 @@ body,html
     -o-transition: all .25s linear;  
     transition: all .25s linear; 
 }
-.buttonlike
+.buttonlike, .game-wrapper
 {
-	width:680px;
-	height:350px;
-	padding-top:0;
-	top:7%;
-	position:relative;
-	border: 3px solid #171A21;
-	margin:0 auto;
-	background:#0D1017;
-	border-bottom-left-radius:15px;
-	border-bottom-right-radius:15px;
+	width: 880px;
+	height: 600px;
+	position: absolute;
+	margin: auto;
+	left: 0;
+	right: 0;
+	top: 0;
+	bottom: 0;
+}
+.titles h2
+{
+	margin: 0;
+	display: inline-block;
+}
+.titles
+{
+	display: block;
+	padding: 10px;
+	position: relative;
+	top: -30px;
+	margin-bottom: -30px;
+	background: #1F2532;
+}
+.buttonlike form
+{
+	width: 880px;
+	height: 400px;
+	padding-top: 0;
+	background: #171A21;
+	display: block;
+	position: relative;
 }
 .text
 {
@@ -73,7 +86,7 @@ body,html
 	padding-top:70px;
 	display:block;
 }
-.wrapper h1 , .wrapper h2
+.wrapper h1 , .wrapper h2, .wrapper h3
 {
 	letter-spacing:2px;
 	font-weight:300;
@@ -100,32 +113,40 @@ a.button:hover
 	height: 1px;
 	background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgb(56,151,235), rgba(0, 0, 0, 0));
 }
+.buttonsBar
+{
+	border: none;
+	background: #1F2532;
+	color: white;
+	padding: 10px 0;
+	display: block;
+	position: absolute;
+	bottom: 0;
+	width: 100%;
+	height: 50px;
+
+}
 .submit
 {
-	border:none;
+	border: none;
 	background-image: linear-gradient(to right, #3897EB, #235ECF);
-	color:white;
-	padding:10px;
-	border-radius:2px;
-	display:block;
-	position:absolute;
-	bottom:0px;
-	margin:15px auto;
-	width:90%;
-	height:36px;
-	text-align:center;
-	cursor:pointer;
-	left:0;
-	right:0;
-	text-transform:uppercase;
-	font-weight:600;
-	letter-spacing:1.2px;
-	font-size:14px;
+	color: white;
+	padding: 10px;
+	border-radius: 2px;
+	display: block;
+	margin: 8px 0;
+	width: 20%;
+	height: 36px;
+	text-align: center;
+	cursor: pointer;
+	right: 40px;
+	position: absolute;
+	text-transform: uppercase;
+	font-weight: 600;
+	letter-spacing: 1.2px;
+	font-size: 14px;
 }
-.buttonlike form 
-{
-	padding:0px 50px;
-}
+
 .pretty .state label::before {
 	border-color:#235ECF;
 }
@@ -136,9 +157,15 @@ a.button:hover
 {
 	float:left;
 }
-.inputs 
+.block
 {
-	margin-left:10%;
+	width:30%;
+	display: block;
+	float: left;
+}
+.block:first-child
+{
+	margin-left:5%;
 }
 input[type=number]::-webkit-inner-spin-button, 
 input[type=number]::-webkit-outer-spin-button 
@@ -156,16 +183,21 @@ input[type=number]
 	color:white;
 	-moz-appearance:textfield;
 	padding:5px;
+	width: 35%;
+	text-align: center;
+	height: 27px;
+	border-radius: 5px;
+	font-size: 16px;
 }
 .select2.select2-container.select2-container--default
 {
 	width: 95% !important;
-	margin: 10px auto 0px auto !important;
+	margin: 10px auto 0 auto !important;
 	display: block;
 	background: none;
-	border: 2px solid #3897EB !important;
-	border-bottom: 2px solid #3897EB !important;
-	border-right: 2px solid #3897EB !important;
+	border: 2px solid #235ECF  !important;
+	border-bottom: 2px solid #235ECF  !important;
+	border-right: 2px solid #235ECF  !important;
 	border-radius: 5px;
 	padding: 5px;
 }
@@ -174,16 +206,15 @@ input[type=number]
 	border:none;
 }
 .select2-container--default .select2-selection--single .select2-selection__rendered {
-	background: #0D1017;
+	background: #171A21;
 	border-top: none !important;
 	color:white;
 }
 .select2-dropdown.select2-dropdown--below, .select2-container--default .select2-search--dropdown .select2-search__field
 {
 	background: #171A21;
-	border-color: #3897EB;
-	border-weight:3px;
-	color:white;
+    border: 3px solid #235ECF;
+    color:white;
 }
 .select2-container--default .select2-selection--single .select2-selection__arrow b
 {
@@ -194,6 +225,197 @@ input[type=number]
 {
 	background:#0D1017;
 }
+.header
+{
+	width:100%;
+    height:175px;
+}
+.left
+{
+    float: left;
+}
+.wrapper700 .macigselect > .select2.select2-container.select2-container--default
+{
+	width:100% !important;
+	margin:0 !important;
+}
 
-/*
-#235ECF*/
+
+
+.categories > span
+{
+	padding: 5px 8px;
+	background: rgba(255,255,255,0.05);
+	text-align: center;
+	display: inline-block;
+	margin-bottom: 5px;
+}
+
+#openHeader
+{
+	width: 70px;
+	height: 30px;
+	background: #1F2532;
+	position: fixed;
+	top: 0;
+	right: 5%;
+	text-align: center;
+	padding-top: 10px;
+	font-size: 20px;
+	cursor:pointer;
+}
+/* #235ECF*/
+
+.game-wrapper
+{
+	width: 1280px;
+	height: 800px;
+}
+.game-box
+{
+	background:#171A21;
+	width: 100%;
+	height:100%;
+}
+.header-items
+{
+	width: 100%;
+	height:200px;
+	background-repeat: no-repeat;
+	background-size: cover;
+	background-position: top;
+}
+.center-items
+{
+	text-align: center;
+	margin:0 auto;
+	width: 600px;
+	position: relative;
+	top: 30px;
+}
+.center-items h2
+{
+	letter-spacing: 2px;
+	font-weight: 300;
+	text-transform: uppercase;
+	top: 13px;
+	position: relative;
+	margin: 0;
+	background: rgba(0,0,0,0.3);
+	display: inline;
+	padding: 0 20px;
+}
+.menu
+{
+	width: 300px;
+	background-color: #1F2532;
+	height: calc(100% - 240px);
+	margin: 10px;
+	float: right;
+	padding: 10px;
+	position:relative;
+}
+.right-buttons
+{
+	position: absolute;
+	bottom: 10px;
+	width: calc(100% - 20px);
+	text-align: center;
+}
+.right-button
+{
+	height: 50px;
+	background: #0D1017;
+	position: relative;
+}
+.right-button span
+{
+	position: relative;
+	top: 15px;
+	text-transform: uppercase;
+	letter-spacing: 0.3px;
+	font-weight: 600;
+}
+.content
+{
+	float: left;
+	width: calc(100% - 400px);
+	margin-left: 20px;
+}
+.description > p
+{
+	height: 250px;
+	overflow: auto;
+}
+.menu h3
+{
+	margin-top:0;
+}
+#more
+{
+	font-size: 30px;
+	letter-spacing: -2.7px;
+	font-weight: 300;
+	position: absolute;
+	right: 10px;
+	top: 0;
+	line-height: 35px;
+	cursor: pointer;
+
+}
+#more > span
+{
+	position: relative;
+	top: -7px;
+	cursor: pointer;
+}
+#cookies
+{
+    position: fixed;
+    bottom: 0;
+    background: #171A21;
+    width: 50%;
+    height: 65px; /* 100px normal */
+    margin: 0 auto;
+    left: 0;
+    right: 0;
+}
+#cookies > .info
+{
+    width: 70%;
+    display: inline-block;
+    padding-left: 15px;
+    padding-top: 15px;
+    height: 100%;
+    font-size: 17px;
+}
+#cookies > .buttons
+{
+    display: inline-block;
+    width: 25%;
+    height: 100%;
+    float: right;
+    padding: 15px 15px 15px 0;
+    background: #1F2532;
+}
+.button-accept, .button-manage
+{
+    background-image: linear-gradient(to right, #3897EB, #235ECF);
+    color: white;
+    padding: 10px;
+    border-radius: 2px;
+    display: block;
+    width: 80%;
+    height: 15px;
+    text-align: center;
+    cursor: pointer;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 1.2px;
+    font-size: 14px;
+    margin: 0 7px 5px auto;
+}
+.button-manage
+{
+    background: gray;
+}

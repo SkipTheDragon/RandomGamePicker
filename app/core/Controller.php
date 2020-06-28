@@ -25,7 +25,6 @@ class Controller extends Base
         }
         throw new Exception("The model $model does not exist or is not readable.");
     }
-
     /**
      * Return the master view with data containing the view
      * being requested as well as optional data.

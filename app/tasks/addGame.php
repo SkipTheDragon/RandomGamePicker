@@ -20,15 +20,12 @@ $db = new DataBase();
         $qa = $db->conn->prepare('SELECT * FROM `settings` WHERE `name` = ? ');
         $qa->execute(array('last_id_updated'));
         $row = $qa->fetch();
-        $apps = $init->parseSteamAPI('ISteamApps','GetAppList','v0001');
+        $apps = $init->parseSteam('ISteamApps','GetAppList','v0001');
+    $index = count($apps->applist->apps->app);
 
-    $index = $row['value'] + 200;
-if($row['value'] <= count($apps->applist->apps->app)) {
+    for ($i = $row['value'] + 1; $i < $index; $i++) {
 
-    for ($i = $row['value'] + 1; $i <= $index; $i++) {
-
-        if ($row['value'] <= count($apps->applist->apps->app)) {
-            $result = $init->parseStoreAPI($apps->applist->apps->app[$i]->appid);
+            $result = $init->parseStore("api/appdetails?appids=".$apps->applist->apps->app[$i]->appid."&cc=us");
             if (@$result->success === TRUE) {
                 if ($result->data->type == 'game') {
                     $q = $db->conn->prepare('SELECT * FROM `games` WHERE `steam_appid` = ? ');
@@ -36,20 +33,20 @@ if($row['value'] <= count($apps->applist->apps->app)) {
                     $row_count = $q->rowCount();
 
                     if ($row_count == 0) {
-                        $data = $result->data;
+                        $data = $result->data->$apps->applist->apps->app[$i]->appid;
                         $game = $data->name;
                         $game_id = (int)$data->steam_appid;
                         @$dlc = $isSet->verify($data->dlc, true);
                         @$desc = strip_tags($data->about_the_game, ['<br>', '<a>',]);
                         @$lang = $isSet->verify($data->supported_languages, false, false, true);
                         $profile_img = $data->header_image;
-                        @$requirements = $isSet->verify($data->pc_requirements->minimum, false, false, true);
-                        @$demos = $isSet->verify($data->demos, true);
                         if ($data->is_free == TRUE) {
                             $price = NULL;
                         } else {
-                            @$price = $isSet->verify($data->price_overview->initial);
+                            $price = $data->price_overview->initial;
                         }
+                        @$requirements = $isSet->verify($data->pc_requirements->minimum, false, false, true);
+                        @$demos = $isSet->verify($data->demos, true);
                         $platforms = json_encode($data->platforms);
                         @$categories = $isSet->verify($data->categories, true);
                         @$genres = $isSet->verify($data->genres, true);
@@ -58,19 +55,22 @@ if($row['value'] <= count($apps->applist->apps->app)) {
 
                         $q = $db->conn->prepare('INSERT INTO `games`(name, steam_appid, dlc, demos, description,
                                                                            language, profile_img, requirements,
-                                                                           price, platforms, categories,
+                                                                           platforms, categories,
                                                                            genres, coming_soon, release_date) 
-                                                                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
+                                                                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)');
 
-                        $q->execute(array($game, $game_id, $dlc, $demos, $desc, $lang, $profile_img, $requirements, $price, $platforms, $categories, $genres, $coming_soon, $release));
+                        $q->execute(array($game, $game_id, $dlc, $demos, $desc, $lang, $profile_img, $requirements, $platforms, $categories, $genres, $coming_soon, $release));
+
+                        $q = $db->conn->prepare('INSERT INTO `prices`(steam_appid, actual_price) 
+                                                                 VALUES (?,?)');
+
+                        $q->execute(array($game_id, $price));
+
                     }
-
                 }
             }
             $q = $db->conn->prepare('UPDATE `settings` SET `value` = ? WHERE `name` = ? ');
             $q->execute(array($i, 'last_id_updated'));
+            sleep(1);
 
         }
-        sleep(1);
-    }
-}

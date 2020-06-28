@@ -5,13 +5,12 @@ class Advanced {
     private $object;
     
     private $db;
-    
-  
+
     public function __construct()
     {
-        require_once 'app/core/Source.php';
+        require_once 'app/core/DataBase.php';
         
-        $this->object = new \Source();
+        $this->object = new DataBase();
         $this->db = $this->object->conn;
     }
   
@@ -43,75 +42,85 @@ class Advanced {
    
     public function setFilterRule($rule_name, $rule)
     {
-
         $q = $this->db->prepare('SELECT `id` FROM `games` WHERE '.$rule_name.' '.$rule.'  ');
         $q->execute();
-        $row = $q->fetchAll(\PDO::FETCH_ASSOC);
-       
+        $row = $q->fetchAll(PDO::FETCH_ASSOC);
         $result = array_column($row,'id');
+
         return $result;
     }
-    
-    public function stringToArray($string)
-    {
-        
-        $cleared_string = str_replace(['[',']'], '', $string);
-        $array = explode(',', $cleared_string);
-        
-        return $array;
-    }
-    
-    public function randomGame($game_array)
-    {
-        $rndm = array_rand($game_array);
-        return $rndm;
-    }
-    
+
     public function filterArrays($game_array,$chosen_filters,$filter_type)
     {
-        $data = array();
-        
-            
         $filter = $this->db->prepare('SELECT '.$filter_type.' FROM `games` WHERE `id` = ? ');
         $filter->execute(array($game_array));
         $fetch = $filter->fetchAll(PDO::FETCH_ASSOC);
-            
         $decode_q = json_decode($fetch[0][$filter_type],true);
-            
-        $index = count($decode_q);
-            
-           for ($i = 0; $i < $index; $i++) {
-               $data['description'][$i] = $decode_q[$i]['description'];
+            if(empty($decode_q)) {
+                $decode_q = array('Nothing');
             }
-            if(empty($data['description']))
-            {
-                $data['description'] = array('Nothing');
+         if(!is_array($decode_q)) {
+             echo $game_array.'<br/>';
+         }
+           $verify_data = array_intersect($decode_q,$chosen_filters);
+        if(count($verify_data) >= count($chosen_filters)) {
+                if (!empty($verify_data)) {
+                    return $game_array;
+                }
             }
-        $verify_data = array_intersect($data['description'],$chosen_filters);
-           
-           if(empty($verify_data)) 
-           {
-               return;   
-           }
-           else 
-           {
-               $verify_data['id'] = $game_array;
-               
-               return $verify_data['id'];
-           }
- 
+        return NULL;
     }
     
-    public function formOptions($req_type)
+    public function getFilterDetailsByType($type)
     {
-        $options = $this->db->prepare('SELECT `value` FROM `filters` WHERE type = ?');
-        $options->execute(array($req_type));
+        $options = $this->db->prepare('SELECT value,id FROM `filters` WHERE type = ? ');
+        $options->execute(array($type));
         $fetch = $options->fetchAll(PDO::FETCH_ASSOC);
         $rC = $options->rowCount();
         $fetch['biggestID'] = $rC;
-        
+
         return $fetch;
     }
 
+    public function getFilterDetails($name, $type)
+    {
+        $options = $this->db->prepare('SELECT * FROM `filters` WHERE value = ? AND type = ?');
+        $options->execute(array($name, $type));
+        $fetch = $options->fetch();
+        $rC = $options->rowCount();
 
+        if($rC > 0) {
+            return $fetch['value'];
+        } else {
+            return NULL;
+        }
+    }
+
+    public function appidToDatabaseID($id)
+    {
+        $options = $this->db->prepare('SELECT `steam_appid` FROM `games` WHERE id = ?');
+        $options->execute(array($id));
+        $fetch = $options->fetch();
+        $rC = $options->rowCount();
+
+        if($rC > 0) {
+            return $fetch['value'];
+        } else {
+            return NULL;
+        }
+    }
+
+    public function getScore($game_array)
+    {
+        $options = $this->db->prepare('SELECT * FROM `rating` WHERE appid = ?');
+        $options->execute(array($name, $type));
+        $fetch = $options->fetch();
+        $rC = $options->rowCount();
+
+        if($rC > 0) {
+            return $fetch['value'];
+        } else {
+            return NULL;
+        }
+    }
 }
